@@ -1,8 +1,6 @@
 // @ts-nocheck
 import { EcdsaSecp256k1VerificationKey2019 } from '@bloomprotocol/ecdsa-secp256k1-verification-key-2019'
-// @ts-expect-error: implicit type import; not a ts package
 import jsonld from 'jsonld'
-// @ts-expect-error: implicit type import; not a ts package
 import jsigs from 'jsonld-signatures'
 import { context } from './context'
 
@@ -53,6 +51,7 @@ type EcdsaSecp256k1Signature2019Options = {
 }
 
 export class EcdsaSecp256k1Signature2019 extends jsigs.suites.LinkedDataSignature {
+  key: EcdsaSecp256k1VerificationKey2019
   private requiredKeyType: string
 
   constructor(options: EcdsaSecp256k1Signature2019Options = {}) {
@@ -191,10 +190,10 @@ export class EcdsaSecp256k1Signature2019 extends jsigs.suites.LinkedDataSignatur
 
     const { verificationMethod } = proof
 
-    if (typeof verificationMethod === 'object') {
-      return verificationMethod.id === this.key.id
-    }
-    return verificationMethod === this.key.id
+    const verificationMethodId: string = typeof verificationMethod === 'object' ?
+      verificationMethod.id :
+      verificationMethod;
+    return this.isVerificationMethodMatchingKeyId(verificationMethodId)
   }
 
   ensureSuiteContext({ document, addSuiteContext }: { document: Record<string, unknown>; addSuiteContext?: boolean }) {
@@ -203,6 +202,11 @@ export class EcdsaSecp256k1Signature2019 extends jsigs.suites.LinkedDataSignatur
     }
 
     super.ensureSuiteContext({ document, addSuiteContext })
+  }
+
+  private isVerificationMethodMatchingKeyId (verificationMethod: string): boolean {
+    return verificationMethod === this.key.id ||
+      verificationMethod === `${this.key.controller}${this.key.id}`
   }
 }
 
